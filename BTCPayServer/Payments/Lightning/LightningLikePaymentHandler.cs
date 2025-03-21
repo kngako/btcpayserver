@@ -108,6 +108,13 @@ namespace BTCPayServer.Payments.Lightning
                 try
                 {
                     var request = new CreateInvoiceParams(new LightMoney(due, LightMoneyUnit.BTC), description, expiry);
+                    
+                    // Hacky way to make descriptionHash on lighting invoices...
+                    if (invoice.Metadata.ItemCode == "descriptionHash" && invoice.Metadata.ItemDesc != "") {
+                        request.Description = invoice.Metadata.ItemDesc;
+                        request.DescriptionHashOnly = true;
+                    }
+
                     request.PrivateRouteHints = storeBlob.LightningPrivateRouteHints;
                     lightningInvoice = await client.CreateInvoice(request, cts.Token);
                     var diff = request.Amount - lightningInvoice.Amount;
