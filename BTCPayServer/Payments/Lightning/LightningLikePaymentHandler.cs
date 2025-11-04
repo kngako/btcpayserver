@@ -158,6 +158,8 @@ namespace BTCPayServer.Payments.Lightning
                 ) {
                     DescriptionHashOnly = true
                 };
+            } else if (metadata.ItemDesc != "") {
+                return new CreateInvoiceParams(new LightMoney(due, LightMoneyUnit.BTC), metadata.ItemDesc, expiry);
             } else {
                 return new CreateInvoiceParams(new LightMoney(due, LightMoneyUnit.BTC), description, expiry);
             }
