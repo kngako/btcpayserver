@@ -13,6 +13,7 @@ using BTCPayServer.Logging;
 using BTCPayServer.PaymentRequest;
 using BTCPayServer.Plugins;
 using BTCPayServer.Security;
+using BTCPayServer.Services;
 using BTCPayServer.Services.Apps;
 using BTCPayServer.Storage;
 using Fido2NetLib;
@@ -87,6 +88,9 @@ namespace BTCPayServer.Hosting
             services.AddDataProtection()
                 .SetApplicationName("BTCPay Server")
                 .PersistKeysToFileSystem(new DirectoryInfo(new DataDirectories().Configure(Configuration).DataDir));
+
+            services.AddScoped<ISecurityStampValidator, BTCPayServerSecurityStampValidator>();
+            services.AddSingleton<BTCPayServerSecurityStampValidator.DisabledUsers>();
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders()
@@ -173,6 +177,8 @@ namespace BTCPayServer.Hosting
                 o.AreaViewLocationFormats.Add("/Plugins/{2}/Views/{1}/{0}.cshtml");
                 o.AreaViewLocationFormats.Add("/Plugins/{2}/Views/{0}.cshtml");
                 o.AreaViewLocationFormats.Add("/Plugins/{2}/Views/Shared/{0}.cshtml");
+
+
                 o.AreaViewLocationFormats.Add("/{0}.cshtml");
             })
             .AddNewtonsoftJson()
