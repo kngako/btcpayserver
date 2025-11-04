@@ -14,6 +14,7 @@ using BTCPayServer.Lightning.LndHub;
 using BTCPayServer.Payments.Bitcoin;
 using BTCPayServer.Security;
 using BTCPayServer.Services;
+using BTCPayServer.Services.Invoices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using NBitcoin;
@@ -104,7 +105,13 @@ namespace BTCPayServer.Payments.Lightning
             {
                 try
                 {
-                    var request = new CreateInvoiceParams(new LightMoney(due, LightMoneyUnit.BTC), description, expiry);
+                    var request = produceParams(
+                        invoice.Metadata,
+                        due,
+                        description,
+                        expiry
+                    );
+
                     request.PrivateRouteHints = storeBlob.LightningPrivateRouteHints;
                     lightningInvoice = await client.CreateInvoice(request, cts.Token);
                     var diff = request.Amount - lightningInvoice.Amount;
@@ -135,6 +142,26 @@ namespace BTCPayServer.Payments.Lightning
             paymentPrompt.Details = JObject.FromObject(details, Serializer);
         }
 
+
+        private CreateInvoiceParams produceParams(
+            InvoiceMetadata metadata,
+            decimal due,
+            string description, 
+            TimeSpan expiry
+        ) {
+            // Hacky way to make descriptionHash on lighting invoices...
+            if (metadata.ItemCode == "descriptionHash" && metadata.ItemDesc != "") {
+                return new CreateInvoiceParams(
+                    new LightMoney(due, LightMoneyUnit.BTC), 
+                    metadata.ItemDesc, 
+                    expiry
+                ) {
+                    DescriptionHashOnly = true
+                };
+            } else {
+                return new CreateInvoiceParams(new LightMoney(due, LightMoneyUnit.BTC), description, expiry);
+            }
+        }
 
         public async Task<NodeInfo[]> GetNodeInfo(LightningPaymentMethodConfig supportedPaymentMethod, PrefixedInvoiceLogs? invoiceLogs,
             bool? preferOnion = null, bool throws = false)
