@@ -150,7 +150,7 @@ namespace BTCPayServer.Payments.Lightning
             TimeSpan expiry
         ) {
             // Hacky way to make descriptionHash on lighting invoices...
-            if (metadata.ItemCode == "descriptionHash" && metadata.ItemDesc != "") {
+            if (metadata.ItemCode == "descriptionHash" && string.IsNullOrEmpty(metadata.ItemDesc)) {
                 return new CreateInvoiceParams(
                     new LightMoney(due, LightMoneyUnit.BTC), 
                     metadata.ItemDesc, 
@@ -158,7 +158,7 @@ namespace BTCPayServer.Payments.Lightning
                 ) {
                     DescriptionHashOnly = true
                 };
-            } else if (metadata.ItemDesc != "") {
+            } else if (string.IsNullOrEmpty(metadata.ItemDesc)) {
                 return new CreateInvoiceParams(new LightMoney(due, LightMoneyUnit.BTC), metadata.ItemDesc, expiry);
             } else {
                 return new CreateInvoiceParams(new LightMoney(due, LightMoneyUnit.BTC), description, expiry);
