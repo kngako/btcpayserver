@@ -1,15 +1,8 @@
 ﻿#nullable enable
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using BTCPayServer.Abstractions.Extensions;
-using BTCPayServer.Data;
 using BTCPayServer.Data.Subscriptions;
-using BTCPayServer.Filters;
-using BTCPayServer.Plugins.Subscriptions;
 using BTCPayServer.Views.UIStoreMembership;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -53,7 +46,7 @@ public partial class UIOfferingController
                      ("Custom analytics & reporting", "analytics-dashboard-x"),
                  })
         {
-            ctx.Entitlements.Add(new()
+            ctx.Features.Add(new()
             {
                 OfferingId = offering.Id,
                 Description = e.Item1,
@@ -62,7 +55,7 @@ public partial class UIOfferingController
         }
 
         await ctx.SaveChangesAsync();
-        var entitlements = await ctx.Entitlements.Where(c => c.OfferingId == offeringId).ToDictionaryAsync(x => x.CustomId);
+        var features = await ctx.Features.Where(c => c.OfferingId == offeringId).ToDictionaryAsync(x => x.CustomId);
 
         var p = ctx.Plans.Add(new()
         {
@@ -85,10 +78,10 @@ public partial class UIOfferingController
                      "analytics-dashboard-0"
                  })
         {
-            ctx.PlanEntitlements.Add(new()
+            ctx.PlanFeatures.Add(new()
             {
                 PlanId = p.Entity.Id,
-                EntitlementId = entitlements[e].Id
+                FeatureId = features[e].Id
             });
         }
 
@@ -113,10 +106,10 @@ public partial class UIOfferingController
                      "analytics-dashboard-1"
                  })
         {
-            ctx.PlanEntitlements.Add(new()
+            ctx.PlanFeatures.Add(new()
             {
                 PlanId = p.Entity.Id,
-                EntitlementId = entitlements[e].Id
+                FeatureId = features[e].Id
             });
         }
 
@@ -142,10 +135,10 @@ public partial class UIOfferingController
                      "analytics-dashboard-x"
                  })
         {
-            ctx.PlanEntitlements.Add(new()
+            ctx.PlanFeatures.Add(new()
             {
                 PlanId = p.Entity.Id,
-                EntitlementId = entitlements[e].Id
+                FeatureId = features[e].Id
             });
         }
 

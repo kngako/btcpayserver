@@ -1,7 +1,4 @@
-@using Microsoft.AspNetCore.Mvc.ModelBinding
 @using BTCPayServer.Controllers
-@using BTCPayServer.Services
-@using BTCPayServer.Components.LabelManager
 @model WalletBumpFeeViewModel
 @{
 	var walletId = Context.GetRouteValue("walletId").ToString();
@@ -137,7 +134,7 @@
 		@Html.HiddenFor(a => a.IsMultiSigOnServer)
 		@if (Model.IsMultiSigOnServer)
 		{
-			<button type="submit" id="page-primary" name="command" value="createpending" class="btn btn-primary">Create pending transaction</button>
+			<button type="submit" id="page-primary" name="command" value="createpending" class="btn btn-primary" text-translate="true">Create pending transaction</button>
 		}
 		else
 		{

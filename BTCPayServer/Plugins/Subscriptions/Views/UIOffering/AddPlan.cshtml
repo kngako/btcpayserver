@@ -1,4 +1,4 @@
-﻿@using BTCPayServer.Plugins.Subscriptions
+@using BTCPayServer.Plugins.Subscriptions
 @model AddEditPlanViewModel
 
 @{
@@ -102,14 +102,17 @@
             </div>
             @if (Model.PlanChanges?.Any() is true)
             {
-                <section id="entitlements" class="mt-4">
+                <section id="plan-changes" class="mt-4">
                     <h4 class="mb-4">Plan changes</h4>
                     <p>Allow the subscriber to downgrade or upgrade to a different plan.</p>
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
                             <thead>
-                            <th>Plan</th>
-                            <th>Change type</th>
+								<tr>
+									<th>Plan</th>
+									<th>Change type</th>
+									<th>When</th>
+								</tr>
                             </thead>
                             <tbody>
                             @for (int i = 0; i < Model.PlanChanges.Count; i++)
@@ -125,6 +128,13 @@
                                         <option value="Upgrade">Upgrade</option>
                                         <option value="None">None</option>
                                     </select></td>
+
+									<td>
+										<select class="form-select w-auto" asp-for="PlanChanges[i].Timing">
+											<option value="Immediate">Immediately</option>
+											<option value="AtPeriodEnd">At period end</option>
+										</select>
+									</td>
                                 </tr>
                             }
                             </tbody>
@@ -133,10 +143,10 @@
                 </section>
             }
 
-            @if (Model.Entitlements?.Any() is true)
+            @if (Model.Features?.Any() is true)
             {
-                <section id="entitlements" class="mt-4">
-                    <h4 class="mb-4" text-translate="true">Entitlements</h4>
+                <section id="features" class="mt-4">
+                    <h4 class="mb-4" text-translate="true">Features</h4>
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
                             <thead>
@@ -147,17 +157,17 @@
                             </tr>
                             </thead>
                             <tbody>
-                            @for (int i = 0; i < Model.Entitlements.Count(); i++)
+                            @for (int i = 0; i < Model.Features.Count(); i++)
                             {
                                 <tr>
                                     <td>
-                                        <input asp-for="Entitlements[i].Selected" class="form-check-input entitlement-checkbox"
-                                               data-testid="check_@Model.Entitlements[i].CustomId" type="checkbox">
-                                        <input asp-for="Entitlements[i].CustomId" type="hidden">
-                                        <input asp-for="Entitlements[i].ShortDescription" type="hidden">
+                                        <input asp-for="Features[i].Selected" class="form-check-input feature-checkbox"
+                                               data-testid="check_@Model.Features[i].CustomId" type="checkbox">
+                                        <input asp-for="Features[i].CustomId" type="hidden">
+                                        <input asp-for="Features[i].ShortDescription" type="hidden">
                                     </td>
-                                    <td>@Model.Entitlements[i].CustomId</td>
-                                    <td>@Model.Entitlements[i].ShortDescription</td>
+                                    <td>@Model.Features[i].CustomId</td>
+                                    <td>@Model.Features[i].ShortDescription</td>
                                 </tr>
                             }
                             </tbody>

@@ -3,9 +3,6 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
-using System.Threading.Tasks;
-using BTCPayServer.Abstractions;
-using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -48,6 +45,7 @@ public class BaseEntityData
     public T? GetAdditionalData<T>(string key) where T: class
         => JObject.Parse(AdditionalData)[key]?.ToObject<T>(Serializer);
 
+    [Obsolete("Avoid using this method, if another plugin is modifying additional data at the same time, it would overwrite the changes. Only use if you can ensure that no other plugin is modifying the data at the same time.")]
     public void SetAdditionalData<T>(string key, T? obj)
     {
         if (obj is null)
@@ -82,4 +80,10 @@ public class BaseEntityData
         b.Property(x => x.AdditionalData).HasColumnName("additional_data").HasColumnType("jsonb")
             .HasDefaultValueSql("'{}'::jsonb");
     }
+
+    public static string ToUpdateAdditionalDataJson<T>(string key, T obj) where T : class
+    => new JObject()
+    {
+        [key] = JObject.FromObject(obj, Serializer)
+    }.ToString();
 }

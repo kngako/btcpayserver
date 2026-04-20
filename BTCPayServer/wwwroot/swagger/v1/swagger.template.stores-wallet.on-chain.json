@@ -357,6 +357,10 @@
                                             "type": "string"
                                         },
                                         {
+                                            "description": "An unsigned PSBT in base64 format",
+                                            "$ref": "#/components/schemas/CreateOnChainTransactionResponse"
+                                        },
+                                        {
                                             "$ref": "#/components/schemas/OnChainWalletTransactionData"
                                         }
                                     ]
@@ -369,6 +373,66 @@
                     },
                     "404": {
                         "description": "The key is not found for this store/wallet"
+                    }
+                },
+                "security": [
+                    {
+                        "API_Key": [
+                            "btcpay.store.canmodifystoresettings"
+                        ],
+                        "Basic": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/stores/{storeId}/payment-methods/{paymentMethodId}/wallet/transactions/broadcast": {
+            "post": {
+                "tags": [
+                    "Store Wallet (On Chain)"
+                ],
+                "summary": "Broadcast an on-chain transaction or finalized PSBT",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/StoreId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/PaymentMethodId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BroadcastOnChainTransactionRequest"
+                            }
+                        }
+                    }
+                },
+                "description": "Broadcast a raw transaction hex string or a finalized PSBT for the specified wallet.",
+                "operationId": "StoreOnChainWallets_BroadcastOnChainTransaction",
+                "responses": {
+                    "200": {
+                        "description": "broadcasted transaction",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OnChainWalletTransactionData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "If you are authenticated but forbidden to view the specified store"
+                    },
+                    "404": {
+                        "description": "The key is not found for this store/wallet"
+                    },
+                    "422": {
+                        "description": "The PSBT is not finalized or the transaction payload is invalid."
+                    },
+                    "503": {
+                        "description": "This network only supports read-only features or hotwallets are disabled."
                     }
                 },
                 "security": [
@@ -860,11 +924,6 @@
                         "default": false,
                         "description": "Whether to store the seed inside BTCPay Server to enable some additional services. IF `false` AND `existingMnemonic` IS NOT SPECIFIED, BE SURE TO SECURELY STORE THE SEED IN THE RESPONSE!"
                     },
-                    "importKeysToRPC": {
-                        "type": "boolean",
-                        "default": false,
-                        "description": "Whether to import all addresses generated via BTCPay Server into the underlying node wallet. (Private keys will also be imported if `savePrivateKeys` is set to true."
-                    },
                     "wordList": {
                         "type": "string",
                         "description": "If `existingMnemonic` is not set, a mnemonic is generated using the specified wordList.",
@@ -1167,6 +1226,12 @@
                         "nullable": true,
                         "description": "Whether to broadcast the transaction after creating it or to simply return the transaction in hex format."
                     },
+                    "signWithSeed": {
+                        "type": "boolean",
+                        "default": true,
+                        "nullable": true,
+                        "description": "If false, build an unsigned PSBT and skip server-side signing (use the CreateOnChainTransactionPSBT client helper)."
+                    },
                     "noChange": {
                         "type": "boolean",
                         "default": false,
@@ -1213,6 +1278,29 @@
                         }
                     }
                 }
+            },
+            "CreateOnChainTransactionResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "psbt": {
+                        "type": "string",
+                        "description": "Unsigned PSBT in base64 format"
+                    }
+                }
+            },
+            "BroadcastOnChainTransactionRequest": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "transaction": {
+                        "type": "string",
+                        "description": "A finalized PSBT (base64) or raw transaction hex string"
+                    }
+                },
+                "required": [
+                    "transaction"
+                ]
             }
         }
     },

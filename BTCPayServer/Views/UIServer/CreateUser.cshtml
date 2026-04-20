@@ -1,5 +1,3 @@
-@using BTCPayServer.TagHelpers
-@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model BTCPayServer.Controllers.RegisterFromAdminViewModel
 @{
     ViewData.SetLayoutModel(new(nameof(ServerNavPages.Users), StringLocalizer["Create account"]));
@@ -17,7 +15,7 @@
             </ol>
             <h2>@ViewData["Title"]</h2>
         </nav>
-		<button id="page-primary" type="submit" class="btn btn-primary" name="command" value="Save">Create Account</button>
+		<button id="page-primary" type="submit" class="btn btn-primary" name="command" value="Save" text-translate="true">Create Account</button>
     </div>
     <partial name="_StatusMessage" />
 

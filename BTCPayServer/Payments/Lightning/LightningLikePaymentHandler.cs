@@ -92,6 +92,7 @@ namespace BTCPayServer.Payments.Lightning
             decimal due = paymentPrompt.Calculate().Due;
             var client = config.CreateLightningClient(_Network, Options.Value, _lightningClientFactory);
             var expiry = invoice.ExpirationTime - DateTimeOffset.UtcNow;
+            var isTopUpInvoice = invoice.Type == InvoiceType.TopUp;
             if (expiry < TimeSpan.Zero)
                 expiry = TimeSpan.FromSeconds(1);
 
@@ -114,11 +115,16 @@ namespace BTCPayServer.Payments.Lightning
 
                     request.PrivateRouteHints = storeBlob.LightningPrivateRouteHints;
                     lightningInvoice = await client.CreateInvoice(request, cts.Token);
-                    var diff = request.Amount - lightningInvoice.Amount;
-                    if (diff != LightMoney.Zero)
+
+                    // Since No Invoice Amount so Skip the Tweak Fee check
+                    if (!isTopUpInvoice)
                     {
-                        // Some providers doesn't round up to msat. So we tweak the fees so the due match the BOLT11's amount.
-                        paymentPrompt.AddTweakFee(-diff.ToUnit(LightMoneyUnit.BTC));
+                        var diff = request.Amount - lightningInvoice.Amount;
+                        if (diff != LightMoney.Zero)
+                        {
+                            // Some providers doesn't round up to msat. So we tweak the fees so the due match the BOLT11's amount.
+                            paymentPrompt.AddTweakFee(-diff.ToUnit(LightMoneyUnit.BTC));
+                        }
                     }
                 }
                 catch (OperationCanceledException) when (cts.IsCancellationRequested)
@@ -146,14 +152,14 @@ namespace BTCPayServer.Payments.Lightning
         private CreateInvoiceParams produceParams(
             InvoiceMetadata metadata,
             decimal due,
-            string description, 
+            string description,
             TimeSpan expiry
         ) {
             // Hacky way to make descriptionHash on lighting invoices...
             if (!string.IsNullOrEmpty(metadata.ItemDesc) && metadata.ItemCode == "descriptionHash") {
                 return new CreateInvoiceParams(
-                    new LightMoney(due, LightMoneyUnit.BTC), 
-                    metadata.ItemDesc, 
+                    new LightMoney(due, LightMoneyUnit.BTC),
+                    metadata.ItemDesc,
                     expiry
                 ) {
                     DescriptionHashOnly = true

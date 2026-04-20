@@ -1,7 +1,4 @@
-@using BTCPayServer.Components.MainLogo
 @using BTCPayServer.Services
-@using BTCPayServer.Views.Server
-@using BTCPayServer.Views.Stores
 @inject BTCPayServerEnvironment Env
 @model BTCPayServer.Components.StoreSelector.StoreSelectorViewModel
 @functions {
@@ -51,7 +48,7 @@ else
                 @foreach (var option in Model.Options)
                 {
                     <li>
-                        <a asp-controller="UIStores" asp-action="Index" asp-route-storeId="@option.Value" class="dropdown-item@(option.Selected && !ViewData.ContainsKey("StoreList"))" id="StoreSelectorMenuItem-@option.Value">@StoreName(option.Text)</a>
+                        <a asp-controller="UIStores" asp-action="Index" asp-route-storeId="@option.Value" class="dropdown-item @(option.Selected && !ViewData.ContainsKey("StoreList") ? "active" : "")" id="StoreSelectorMenuItem-@option.Value">@StoreName(option.Text)</a>
                     </li>
                 }
                 @if (Model.Options.Any())

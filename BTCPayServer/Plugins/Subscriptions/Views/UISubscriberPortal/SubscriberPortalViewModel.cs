@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using BTCPayServer.Data.Subscriptions;
 using BTCPayServer.Models;
-using BTCPayServer.Plugins.Subscriptions;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
@@ -91,4 +90,7 @@ public class SubscriberPortalViewModel
     public PlanData Plan => Data.Subscriber.Plan;
 
     public string Anchor { get; set; }
+    public string Url { get; set; }
+    public string Logo => StoreBranding?.LogoUrl ?? BTCPayLogo;
+    public string BTCPayLogo { get; set; }
 }

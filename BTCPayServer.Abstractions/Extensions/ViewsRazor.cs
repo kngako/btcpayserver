@@ -30,6 +30,7 @@ namespace BTCPayServer.Abstractions.Extensions
             return viewData["BlazorAllowed"] is not false;
         }
 
+        [Obsolete("Use SetLayoutModel instead")]
         public static void SetActivePage<T>(this ViewDataDictionary viewData, T activePage, string title = null, string activeId = null)
             where T : IConvertible
         {
@@ -55,6 +56,7 @@ namespace BTCPayServer.Abstractions.Extensions
         public static bool IsCategory(this ViewDataDictionary viewData, WellKnownCategories category) =>
             IsCategory(viewData, LayoutModel.Map(category));
 
+        [Obsolete("Use SetLayoutModel instead")]
         public static void SetActivePage(this ViewDataDictionary viewData, string activePage, string category, string title = null, string activeId = null)
         => viewData.SetLayoutModel(new(activePage, title){ SubMenuItemId = activeId, ActiveCategory = category } );
 
@@ -97,17 +99,20 @@ namespace BTCPayServer.Abstractions.Extensions
             return categoryAndPageMatch && idMatch;
         }
 
+        [Obsolete()]
         public static bool IsPageActive<T>(this ViewDataDictionary viewData, IEnumerable<T> pages, object id = null)
             where T : IConvertible
         {
             return pages.Any(page => ActivePageClass(viewData, page.ToString(), page.GetType().ToString(), id) == ACTIVE_CLASS);
         }
 
+        [Obsolete("Use IsCategory instead")]
         public static string ActiveCategoryClass<T>(this ViewDataDictionary viewData, T category, object id = null)
         {
             return ActiveCategoryClass(viewData, category.ToString(), id);
         }
 
+        [Obsolete("Use IsCategory instead")]
         public static string ActiveCategoryClass(this ViewDataDictionary viewData, string category, object id = null)
         {
             return IsCategoryActive(viewData, category, id) ? ACTIVE_CLASS : null;

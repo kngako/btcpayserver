@@ -1,4 +1,3 @@
-@using BTCPayServer.Client
 @using BTCPayServer.Controllers
 @model UIManageController.AddApiKeyViewModel
 
@@ -37,7 +36,7 @@
             </ol>
             <h2>@ViewData["Title"]</h2>
         </nav>
-		<button id="page-primary" type="submit" class="btn btn-primary">Generate API Key</button>
+		<button id="page-primary" type="submit" class="btn btn-primary" text-translate="true">Generate API Key</button>
     </div>
     <p text-translate="true">Generate a new api key to use BTCPay through its API.</p>
     <div class="row">
@@ -64,7 +63,7 @@
                     {
                         <div class="list-group-item py-3">
                             <input type="hidden" asp-for="PermissionValues[i].Permission" />
-                            @if (Policies.IsStorePolicy(Model.PermissionValues[i].Permission))
+                            @if (Model.PermissionValues[i].IsStorePolicy)
                             {
                                 <input type="hidden" asp-for="PermissionValues[i].StoreMode" value="@Model.PermissionValues[i].StoreMode" />
                                 @if (Model.PermissionValues[i].StoreMode == UIManageController.AddApiKeyViewModel.ApiKeyStoreMode.AllStores)

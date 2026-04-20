@@ -2,7 +2,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using BTCPayServer.Abstractions;
-using BTCPayServer.Data.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -31,6 +30,9 @@ public class PortalSessionData
     [Column("base_url", TypeName = "text")]
     public RequestBaseUrl BaseUrl { get; set; }
 
+    [NotMapped]
+    public bool IsExpired => DateTimeOffset.UtcNow > Expiration;
+
     public static void OnModelCreating(ModelBuilder builder, DatabaseFacade databaseFacade)
     {
         var b = builder.Entity<PortalSessionData>();
@@ -39,6 +41,7 @@ public class PortalSessionData
             .ValueGeneratedOnAdd()
             .HasValueGenerator(ValueGenerators.WithPrefix("ps"));
         b.HasIndex(x => x.Expiration);
+        b.Property(x => x.Expiration).HasDefaultValueSql("now() + interval '1 day'");
         b.Property(x => x.BaseUrl)
             .HasConversion<string>(
                 x => x.ToString(),

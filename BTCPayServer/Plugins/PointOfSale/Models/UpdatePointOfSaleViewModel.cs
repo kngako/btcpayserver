@@ -74,7 +74,7 @@ namespace BTCPayServer.Plugins.PointOfSale.Models
         public string CustomTipPercentages { get; set; }
 
         public string Id { get; set; }
-        public Dictionary<string, string> StoreUsers { get; set; }
+        public Dictionary<string, string> StoreUserEmails { get; set; }
 
         [Display(Name = "Redirect invoice to redirect url automatically after paid")]
         public string RedirectAutomatically { get; set; } = string.Empty;
@@ -101,5 +101,8 @@ namespace BTCPayServer.Plugins.PointOfSale.Models
         public string FormId { get; set; }
 
         public bool Archived { get; set; }
+
+        [Display(Name = "Disable zero amount invoices")]
+        public bool DisableZeroAmountInvoice { get; set; }
     }
 }

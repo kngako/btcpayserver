@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Newtonsoft.Json.Linq;
 
 
 namespace BTCPayServer.Data
@@ -41,6 +39,7 @@ namespace BTCPayServer.Data
         public const string Processing = nameof(Processing);
         public const string Settled = nameof(Settled);
         public const string Invalid = nameof(Invalid);
+        public const string Expired = nameof(Expired);
 
         internal static void OnModelCreating(ModelBuilder builder, DatabaseFacade databaseFacade)
         {

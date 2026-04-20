@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -12,18 +12,17 @@ using BTCPayServer.Data.Subscriptions;
 using BTCPayServer.Models;
 using BTCPayServer.Services;
 using BTCPayServer.Views.UIStoreMembership;
-using Dapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using static BTCPayServer.Plugins.Subscriptions.SubscriptionHostedService;
 
 namespace BTCPayServer.Plugins.Subscriptions.Controllers;
 
 [AllowAnonymous]
-[AutoValidateAntiforgeryToken]
 [Area(SubscriptionsPlugin.Area)]
 [Route("subscriber-portal/{portalSessionId}")]
 public class UISubscriberPortalController(
@@ -92,7 +91,9 @@ public class UISubscriberPortalController(
             StoreName = store.StoreName,
             StoreBranding = await StoreBrandingViewModel.CreateAsync(Request, uriResolver, store.GetStoreBlob()),
             PlanChanges = planChanges,
-            Refund = (refundValue, displayFormatter.Currency(refundValue, curr, DisplayFormatter.CurrencyFormat.Symbol))
+            Refund = (refundValue, displayFormatter.Currency(refundValue, curr, DisplayFormatter.CurrencyFormat.Symbol)),
+            Url = string.IsNullOrEmpty(store.StoreWebsite) ? Request.GetRequestBaseUrl().ToString() : store.StoreWebsite,
+            BTCPayLogo = Url.Content("~/img/btcpay-logo.svg")
         };
         var creditHist = await ctx.SubscriberCreditHistory
             .Where(s => s.SubscriberId == session.SubscriberId && s.Currency == session.Subscriber.Plan.Currency)
@@ -210,16 +211,28 @@ public class UISubscriberPortalController(
                 else
                     return RedirectToSubscriberPortal(portalSessionId, "plans");
             }
-
-            var checkoutId = await SubsService.CreatePlanMigrationCheckout(session.Id, changedPlanId, onPay, Request.GetRequestBaseUrl());
-            return await RedirectToPlanCheckoutPayment(checkoutId, session.Subscriber.CustomerSelector, cancellationToken);
+            var result = await SubsService.CreatePlanMigrationCheckout(session.Id, changedPlanId, onPay, Request.GetRequestBaseUrl());
+            if (result is PlanMigrationResult.Scheduled)
+            {
+                TempData.SetStatusSuccess(StringLocalizer["Your plan will change at the end of your current billing period."]);
+                return RedirectToSubscriberPortal(portalSessionId);
+            }
+            return result is PlanMigrationResult.Checkout c
+                ? await RedirectToPlanCheckoutPayment(c.CheckoutId, cancellationToken)
+                : RedirectToSubscriberPortal(portalSessionId);
         }
         else if (command == "update-auto-renewal")
         {
             session.Subscriber.AutoRenew = !session.Subscriber.AutoRenew;
             await ctx.SaveChangesAsync(cancellationToken);
         }
-
+        else if (command == "cancel-scheduled-change")
+        {
+            session.Subscriber.NewPlanId = null;
+            session.Subscriber.NewPlan = null;
+            await ctx.SaveChangesAsync(cancellationToken);
+            TempData.SetStatusSuccess(StringLocalizer["Scheduled plan change cancelled."]);
+        }
         return RedirectToSubscriberPortal(portalSessionId);
     }
 
@@ -233,7 +246,7 @@ public class UISubscriberPortalController(
 
 
         var selector = new SubscriptionHostedService.MemberSelector.Single(portal.SubscriberId);
-        if (command == "reminder" && portal.Subscriber.GetReminderDate() is { } reminderDate)
+        if (command == "reminder" && portal.Subscriber.ReminderDate is { } reminderDate)
         {
             await SubsService.MoveTime(selector, reminderDate - DateTimeOffset.UtcNow);
             TempData.SetStatusSuccess("Moved to reminder");

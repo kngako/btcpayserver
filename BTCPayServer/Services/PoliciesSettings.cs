@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using BTCPayServer.Data;
 using BTCPayServer.JsonConverters;
 using BTCPayServer.Payments;
 using BTCPayServer.Validation;
@@ -56,9 +55,6 @@ namespace BTCPayServer.Services
         [Display(Name = "Non-admins can create Cold Wallets for their Store")]
         public bool AllowCreateColdWalletForAll { get; set; }
 
-        [Display(Name = "Non-admins can import Hot Wallets for their Store")]
-        public bool AllowHotWalletRPCImportForAll { get; set; }
-
         [Display(Name = "Check releases on GitHub and notify when new BTCPay Server version is available")]
         public bool CheckForNewVersions { get; set; }
 
@@ -102,6 +98,9 @@ namespace BTCPayServer.Services
 
         [Display(Name = "Default store template")]
         public JObject DefaultStoreTemplate { get; set; }
+
+        [Display(Name = "Register page redirect URL")]
+        public string RegisterPageRedirect { get; set; }
 
         public class BlockExplorerOverrideItem
         {
