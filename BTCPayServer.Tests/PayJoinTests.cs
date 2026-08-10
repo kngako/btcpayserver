@@ -28,7 +28,6 @@ using NBXplorer.Models;
 using Newtonsoft.Json.Linq;
 
 using Xunit;
-using Xunit.Abstractions;
 
 namespace BTCPayServer.Tests
 {
@@ -239,7 +238,7 @@ namespace BTCPayServer.Tests
             }
         }
 
-        [Fact]
+        [Fact(Timeout = 30_000)]
         [Trait("Playwright", "Playwright-2")]
         public async Task CanUsePayjoinForTopUp()
         {
@@ -271,7 +270,6 @@ namespace BTCPayServer.Tests
             });
             await AssertDestinationFilled(s, bip21);
             await s.Page.FillAsync("#Outputs_0__Amount", "0.023");
-            await s.TakeScreenshot("filled.png");
             await s.Page.ClickAsync("#SignTransaction");
             await s.Server.WaitForEvent<NewOnChainTransactionEvent>(async () =>
             {
@@ -281,7 +279,7 @@ namespace BTCPayServer.Tests
                 }
                 catch
                 {
-                    await s.TakeScreenshot("Flaky.png");
+                    await s.TakeScreenshot("PayJoinTests-Flaky.png");
                     throw;
                 }
             });
@@ -480,7 +478,7 @@ namespace BTCPayServer.Tests
                     changeIndex = i;
             }
 
-            var derivationSchemeSettings = alice.GetController<UIWalletsController>().GetDerivationSchemeSettings(new WalletId(alice.StoreId, "BTC"));
+            var derivationSchemeSettings = alice.GetController<UIWalletsController>().GetDerivationSchemeSettings("BTC");
             var signingAccount = derivationSchemeSettings.GetFirstAccountKeySettings();
             psbt.SignAll(derivationSchemeSettings.AccountDerivation, alice.GenerateWalletResponseV.AccountHDKey, signingAccount.GetRootedKeyPath());
             using var fakeServer = new FakeServer();

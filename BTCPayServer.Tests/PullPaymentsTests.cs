@@ -20,7 +20,6 @@ using Microsoft.EntityFrameworkCore;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Xunit;
-using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
 using PayoutData = BTCPayServer.Data.PayoutData;
 
@@ -43,7 +42,7 @@ public class PullPaymentsTests(ITestOutputHelper helper) : UnitTestBase(helper)
             }, e => e.Type == PayoutEvent.PayoutEventType.Created)).Payout;
         }
         s.Server.DeleteStore = false;
-        s.Server.ActivateLightning(LightningConnectionType.LndREST);
+        s.Server.ActivateLightning(LightningTestImplementation.LND);
         await s.StartAsync();
         await s.Server.EnsureChannelsSetup();
         await s.RegisterNewUser(true);
@@ -225,7 +224,6 @@ public class PullPaymentsTests(ITestOutputHelper helper) : UnitTestBase(helper)
         await s.Page.FillAsync("#Amount", payoutAmount.ToString());
         await s.Page.FillAsync("#Currency", "BTC");
         await s.ClickPagePrimary();
-        await s.Page.Locator(".actions-col a:has-text('View')").First.ClickAsync();
         string bolt;
         PayoutData payout;
         await using (await s.SwitchPage(async () =>
@@ -537,7 +535,7 @@ public class PullPaymentsTests(ITestOutputHelper helper) : UnitTestBase(helper)
             Amount = 0.5m,
             Currency = "BTC",
         }, controller.HttpContext.GetStoreData(), controller.Url.Link(null, null)!, [PullPaymentHostedService.GetInternalTag(pp.Id)]);
-        await client.MarkInvoiceStatus(user.StoreId, invoice.Id, new() { Status = InvoiceStatus.Settled });
+        await client.MarkInvoiceStatus(invoice.Id, new() { Status = InvoiceStatus.Settled });
 
         await TestUtils.EventuallyAsync(async () =>
         {
@@ -639,7 +637,7 @@ public class PullPaymentsTests(ITestOutputHelper helper) : UnitTestBase(helper)
         await tester.EnsureChannelsSetup();
         var acc = tester.NewAccount();
         await acc.GrantAccessAsync(true);
-        acc.RegisterLightningNode("BTC", LightningConnectionType.CLightning, false);
+        acc.RegisterLightningNode("BTC", LightningTestImplementation.CoreLightning, false);
         var storeId = (await acc.RegisterDerivationSchemeAsync("BTC", importKeysToNBX: true)).StoreId;
         var client = await acc.CreateClient();
         var result = await client.CreatePullPayment(storeId, new CreatePullPaymentRequest()
@@ -685,12 +683,9 @@ public class PullPaymentsTests(ITestOutputHelper helper) : UnitTestBase(helper)
         });
         Assert.Equal(TimeSpan.FromDays(31.0), test2.BOLT11Expiration);
 
-        TestLogs.LogInformation("Can't archive without knowing the walletId");
-        var ex = await AssertEx.AssertApiError("missing-permission", async () => await client.ArchivePullPayment("lol", result.Id));
-        Assert.Equal("btcpay.store.canarchivepullpayments", ((GreenfieldPermissionAPIError)ex.APIError).MissingPermission);
         TestLogs.LogInformation("Can't archive without permission");
-        await AssertEx.AssertApiError("unauthenticated", async () => await unauthenticated.ArchivePullPayment(storeId, result.Id));
-        await client.ArchivePullPayment(storeId, result.Id);
+        await AssertEx.AssertApiError("unauthenticated", async () => await unauthenticated.ArchivePullPayment(result.Id));
+        await client.ArchivePullPayment(result.Id);
         result = await unauthenticated.GetPullPayment(result.Id);
         Assert.Equal(TimeSpan.FromDays(30.0), result.BOLT11Expiration);
         Assert.True(result.Archived);
@@ -753,7 +748,7 @@ public class PullPaymentsTests(ITestOutputHelper helper) : UnitTestBase(helper)
         }));
 
         TestLogs.LogInformation("Can archive payout");
-        await client.CancelPayout(storeId, payout.Id);
+        await client.CancelPayout(payout.Id);
         payouts = await unauthenticated.GetPayouts(pps[0].Id);
         Assert.Empty(payouts);
 
@@ -829,22 +824,22 @@ public class PullPaymentsTests(ITestOutputHelper helper) : UnitTestBase(helper)
             Destination = destination,
             PayoutMethodId = "BTC"
         });
-        await AssertEx.AssertApiError("old-revision", async () => await client.ApprovePayout(storeId, payout.Id, new ApprovePayoutRequest()
+        await AssertEx.AssertApiError("old-revision", async () => await client.ApprovePayout(payout.Id, new ApprovePayoutRequest()
         {
             Revision = -1
         }));
-        await AssertEx.AssertApiError("rate-unavailable", async () => await client.ApprovePayout(storeId, payout.Id, new ApprovePayoutRequest()
+        await AssertEx.AssertApiError("rate-unavailable", async () => await client.ApprovePayout(payout.Id, new ApprovePayoutRequest()
         {
             RateRule = "DONOTEXIST(BTC_USD)"
         }));
-        payout = await client.ApprovePayout(storeId, payout.Id, new ApprovePayoutRequest()
+        payout = await client.ApprovePayout(payout.Id, new ApprovePayoutRequest()
         {
             Revision = payout.Revision
         });
         Assert.Equal(PayoutState.AwaitingPayment, payout.State);
         Assert.NotNull(payout.PayoutAmount);
         Assert.Equal(1.0m, payout.PayoutAmount); // 1 BTC == 5000 USD in tests
-        await AssertEx.AssertApiError("invalid-state", async () => await client.ApprovePayout(storeId, payout.Id, new ApprovePayoutRequest()
+        await AssertEx.AssertApiError("invalid-state", async () => await client.ApprovePayout(payout.Id, new ApprovePayoutRequest()
         {
             Revision = payout.Revision
         }));
@@ -863,15 +858,15 @@ public class PullPaymentsTests(ITestOutputHelper helper) : UnitTestBase(helper)
             Destination = destination,
             PayoutMethodId = "BTC"
         });
-        payout = await client.ApprovePayout(storeId, payout.Id, new ApprovePayoutRequest());
+        payout = await client.ApprovePayout(payout.Id, new ApprovePayoutRequest());
         // The payout should round the value of the payment down to the network of the payment method
         Assert.Equal(12.30322814m, payout.PayoutAmount);
         Assert.Equal(12.303228134m, payout.OriginalAmount);
 
-        await client.MarkPayoutPaid(storeId, payout.Id);
+        await client.MarkPayoutPaid(payout.Id);
         payout = (await client.GetPayouts(payout.PullPaymentId)).First(data => data.Id == payout.Id);
         Assert.Equal(PayoutState.Completed, payout.State);
-        await AssertEx.AssertApiError("invalid-state", async () => await client.MarkPayoutPaid(storeId, payout.Id));
+        await AssertEx.AssertApiError("invalid-state", async () => await client.MarkPayoutPaid(payout.Id));
 
         // Test LNURL values
         var test4 = await client.CreatePullPayment(storeId, new CreatePullPaymentRequest()
@@ -1034,7 +1029,7 @@ public class PullPaymentsTests(ITestOutputHelper helper) : UnitTestBase(helper)
         await s.ClickPagePrimary();
 
         var opening = s.Page.Context.WaitForPageAsync();
-        await s.Page.ClickAsync("text=View");
+        await s.Page.Locator(".actions-col a:has-text('View')").First.ClickAsync();
         var newPage = await opening;
         await Expect(newPage.Locator("body")).ToContainTextAsync("PP1");
         await newPage.CloseAsync();
@@ -1049,7 +1044,7 @@ public class PullPaymentsTests(ITestOutputHelper helper) : UnitTestBase(helper)
         await s.FindAlertMessage();
 
         await using (await s.SwitchPage(async () => {
-                         await s.Page.ClickAsync("text=View");
+                         await s.Page.Locator(".actions-col a:has-text('View')").First.ClickAsync();
                      }))
         {
             try
